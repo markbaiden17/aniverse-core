@@ -1,15 +1,15 @@
-# Python
+# Python: Ignore compiled bytecode to prevent conflicts
 __pycache__/
 *.pyc
 
-# Virtual environment
+# Virtual Environment: Local dependencies (install via requirements.txt)
 venv/
 
-# Django
+# Django: Ignore local database, logs, and collected static/media files
 db.sqlite3
 *.log
 staticfiles/
 media/
 
-# Secrets
+# Secrets: Prevent sensitive environment variables from being committed
 .env

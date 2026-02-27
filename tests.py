@@ -1,5 +1,6 @@
 """
 AniVerse Core — Unit Tests
+Comprehensive test suite covering Authentication, Reviews, Watchlist, and Analytics.
 Run with: python manage.py test
 """
 
@@ -11,22 +12,22 @@ from rest_framework.test import APITestCase
 from apps.reviews.models import Review
 from apps.watchlist.models import WatchlistEntry
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Helper
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# Helper Functions
+# -----------------------------------------------------------------------------
 
 def create_user(username='testuser', password='TestPass123'):
+    """Utility to create a user and return an associated Auth Token."""
     user = User.objects.create_user(username=username, password=password)
     token, _ = Token.objects.get_or_create(user=user)
     return user, token
 
-
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # Authentication Tests
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 class RegisterTests(APITestCase):
+    """Test user registration flow and validation logic."""
     url = '/api/auth/register/'
 
     def test_register_success(self):
@@ -49,6 +50,7 @@ class RegisterTests(APITestCase):
 
 
 class LoginTests(APITestCase):
+    """Test user authentication and token retrieval."""
     url = '/api/auth/login/'
 
     def setUp(self):
@@ -67,12 +69,12 @@ class LoginTests(APITestCase):
         response = self.client.post(self.url, {'username': 'ghost', 'password': 'anything'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Review Tests
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# Review System Tests
+# -----------------------------------------------------------------------------
 
 class ReviewListCreateTests(APITestCase):
+    """Test review creation, duplicate prevention, and public listing."""
     url = '/api/reviews/'
 
     def setUp(self):
@@ -80,6 +82,7 @@ class ReviewListCreateTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
 
     def test_create_review_success(self):
+        # Checks for correct data storage and username injection in response
         data = {'media_id': 1, 'rating': 9, 'comment': 'Great anime!'}
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -93,16 +96,19 @@ class ReviewListCreateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_review_rating_too_high(self):
+        # Range validation test (max 10)
         data = {'media_id': 3, 'rating': 11, 'comment': 'Out of range'}
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_review_rating_too_low(self):
+        # Range validation test (min 1)
         data = {'media_id': 4, 'rating': 0, 'comment': 'Zero rating'}
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_duplicate_review_rejected(self):
+        # Enforces one review per user per anime
         data = {'media_id': 5, 'rating': 8, 'comment': 'First review'}
         self.client.post(self.url, data)
         response = self.client.post(self.url, data)
@@ -114,6 +120,7 @@ class ReviewListCreateTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_filter_by_media_id(self):
+        # Verifies custom filter backend for media_id lookups
         Review.objects.create(user=self.user, media_id=100, rating=7, comment='A')
         Review.objects.create(user=self.user, media_id=200, rating=8, comment='B')
         response = self.client.get(self.url + '?media_id=100')
@@ -123,6 +130,7 @@ class ReviewListCreateTests(APITestCase):
 
 
 class ReviewDetailTests(APITestCase):
+    """Test Object-Level Permissions: Only owners can modify their reviews."""
 
     def setUp(self):
         self.owner, self.owner_token = create_user('owner', 'OwnerPass1')
@@ -162,12 +170,12 @@ class ReviewDetailTests(APITestCase):
         response = self.client.get('/api/reviews/99999/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # Watchlist Tests
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 class WatchlistTests(APITestCase):
+    """Test private watchlist management and status updates."""
     url = '/api/watchlist/'
 
     def setUp(self):
@@ -186,6 +194,7 @@ class WatchlistTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_watchlist_only_shows_own_entries(self):
+        # Privacy check: Ensure data isolation between users
         WatchlistEntry.objects.create(user=self.user, media_id=60, status='completed')
         other, _ = create_user('other_watcher', 'OtherPass2')
         WatchlistEntry.objects.create(user=other, media_id=70, status='watching')
@@ -201,26 +210,22 @@ class WatchlistTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_update_watchlist_status(self):
-        entry = WatchlistEntry.objects.create(
-            user=self.user, media_id=90, status='plan_to_watch'
-        )
+        entry = WatchlistEntry.objects.create(user=self.user, media_id=90, status='plan_to_watch')
         response = self.client.patch(f'{self.url}{entry.id}/', {'status': 'completed'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['status'], 'completed')
 
     def test_delete_watchlist_entry(self):
-        entry = WatchlistEntry.objects.create(
-            user=self.user, media_id=95, status='watching'
-        )
+        entry = WatchlistEntry.objects.create(user=self.user, media_id=95, status='watching')
         response = self.client.delete(f'{self.url}{entry.id}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Stats Tests
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+# Statistical Data Tests
+# -----------------------------------------------------------------------------
 
 class StatsTests(APITestCase):
+    """Test rating aggregation math and distribution logic."""
 
     def setUp(self):
         u1, _ = create_user('stat_user1', 'Pass1234!')
@@ -237,6 +242,7 @@ class StatsTests(APITestCase):
         self.assertEqual(float(response.data['average_rating']), 8.0)
 
     def test_stats_no_reviews(self):
+        # Edge case: Anime with zero reviews
         response = self.client.get('/api/stats/00000/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total_reviews'], 0)
@@ -247,6 +253,7 @@ class StatsTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_stats_rating_distribution(self):
+        # Verifies correct tally for each rating score (1-10)
         response = self.client.get('/api/stats/999/')
         dist = response.data['rating_distribution']
         self.assertEqual(dist['8'], 1)
