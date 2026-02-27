@@ -20,8 +20,6 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = [
-            'id',
-            'user',
             'username',
             'media_id',
             'anime_title',
