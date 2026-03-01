@@ -4,6 +4,17 @@ A RESTful API built with **Django 5** and **Django REST Framework** that allows 
 
 ---
 
+## 🌐 Live API
+
+**Production URL:** https://markbaiden.pythonanywhere.com/api/
+
+**Try it now:**
+- Browse Reviews: https://markbaiden.pythonanywhere.com/api/reviews/
+- View Popular Anime: https://markbaiden.pythonanywhere.com/api/reviews/anime-list/
+- Check Stats: https://markbaiden.pythonanywhere.com/api/stats/16498/
+
+---
+
 ## 🚀 Features
 
 - **User Authentication** — Token-based auth with registration and login
@@ -24,9 +35,9 @@ A RESTful API built with **Django 5** and **Django REST Framework** that allows 
 | API Toolkit | Django REST Framework 3.15.2 |
 | Authentication | DRF Token Authentication |
 | External API | AniList GraphQL API |
-| Database (Dev) | SQLite |
-| Database (Prod) | PostgreSQL |
+| Database | SQLite |
 | HTTP Client | Requests 2.31.0 |
+| Deployment | PythonAnywhere |
 
 ---
 
@@ -60,7 +71,7 @@ aniverse-core/
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/aniverse-core.git
+git clone https://github.com/markbaiden17/aniverse-core.git
 cd aniverse-core
 ```
 
@@ -105,10 +116,9 @@ The API will be available at **`http://127.0.0.1:8000/`**
 
 ## 📚 API Documentation
 
-### Base URL
-```
-http://127.0.0.1:8000/api/
-```
+### Base URLs
+- **Development:** `http://127.0.0.1:8000/api/`
+- **Production:** `https://markbaiden.pythonanywhere.com/api/`
 
 ---
 
@@ -519,14 +529,14 @@ The API integrates with the **AniList GraphQL API** to fetch anime metadata:
 
 ### Register and Get Token
 ```bash
-curl -X POST http://127.0.0.1:8000/api/auth/register/ \
+curl -X POST https://markbaiden.pythonanywhere.com/api/auth/register/ \
   -H "Content-Type: application/json" \
   -d '{"username": "testuser", "email": "test@example.com", "password": "testpass123"}'
 ```
 
 ### Create a Review
 ```bash
-curl -X POST http://127.0.0.1:8000/api/reviews/ \
+curl -X POST https://markbaiden.pythonanywhere.com/api/reviews/ \
   -H "Content-Type: application/json" \
   -H "Authorization: Token YOUR_TOKEN_HERE" \
   -d '{"media_id": 16498, "rating": 9, "comment": "Amazing anime!"}'
@@ -534,12 +544,12 @@ curl -X POST http://127.0.0.1:8000/api/reviews/ \
 
 ### Get Popular Anime
 ```bash
-curl http://127.0.0.1:8000/api/reviews/anime-list/?limit=5
+curl https://markbaiden.pythonanywhere.com/api/reviews/anime-list/?limit=5
 ```
 
 ### Add to Watchlist
 ```bash
-curl -X POST http://127.0.0.1:8000/api/watchlist/ \
+curl -X POST https://markbaiden.pythonanywhere.com/api/watchlist/ \
   -H "Content-Type: application/json" \
   -H "Authorization: Token YOUR_TOKEN_HERE" \
   -d '{"media_id": 16498, "status": "watching"}'
@@ -547,21 +557,8 @@ curl -X POST http://127.0.0.1:8000/api/watchlist/ \
 
 ### Get Stats
 ```bash
-curl http://127.0.0.1:8000/api/stats/16498/
+curl https://markbaiden.pythonanywhere.com/api/stats/16498/
 ```
-
----
-
-## 🚀 Deployment
-
-### PythonAnywhere Setup (Coming Soon)
-
-1. Upload code via Git
-2. Create PostgreSQL database
-3. Set environment variables (`DEBUG=False`, `SECRET_KEY`, database credentials)
-4. Run migrations: `python manage.py migrate`
-5. Configure WSGI file
-6. Collect static files: `python manage.py collectstatic`
 
 ---
 
